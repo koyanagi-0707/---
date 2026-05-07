@@ -25,7 +25,7 @@ class SimonGame:
         self.miss_count = 0
         self.is_playing_sequence = False
 
-        # 色設定（柔らかい色に変更）
+        # 色設定（柔らかい色）
         self.colors = ["#ff6b6b", "#4d96ff", "#6bcf63", "#ffd93d"]
         self.light_colors = ["#ff9e9e", "#8ab8ff", "#a8f0a8", "#ffec8a"]
 
@@ -47,10 +47,6 @@ class SimonGame:
         with open(SETTINGS_FILE, "w") as f:
             json.dump(self.settings, f, indent=4)
 
-    def clear_screen(self):
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
     # ============================================================
     # タイトル画面
     # ============================================================
@@ -63,18 +59,17 @@ class SimonGame:
         tk.Button(self.root, text="スタート", font=("Arial", 20),
                   command=self.start_game).pack(pady=20)
 
-    # ★ ハイスコアリセットボタンを追加
+        # ★ ハイスコアリセットボタン
         tk.Button(self.root, text="ハイスコアをリセット", font=("Arial", 16),
                   command=self.reset_high_score).pack(pady=10)
 
         tk.Label(self.root, text=f"最高記録：{self.settings['high_score']}",
                  font=("Arial", 18), bg="#f0f8ff").pack(pady=20)
 
-
-def reset_high_score(self):
-    self.settings["high_score"] = 0
-    self.save_settings()
-    self.create_title_screen()  # 画面を更新
+    def reset_high_score(self):
+        self.settings["high_score"] = 0
+        self.save_settings()
+        self.create_title_screen()
 
     # ============================================================
     # ゲーム開始
@@ -95,17 +90,14 @@ def reset_high_score(self):
                                     font=("Arial Rounded MT Bold", 22), bg="#f0f8ff")
         self.round_label.pack(pady=10)
 
-        # フィードバック（正解/不正解）
         self.feedback_label = tk.Label(self.root, text="", font=("Arial", 20),
                                        bg="#f0f8ff")
         self.feedback_label.pack(pady=5)
 
-        # 光った数の表示（●○）
         self.progress_label = tk.Label(self.root, text="", font=("Arial", 26),
                                        bg="#f0f8ff")
         self.progress_label.pack(pady=5)
 
-        # 中央に丸ボタン配置（Canvas）
         self.canvas = tk.Canvas(self.root, width=400, height=400,
                                 bg="#f0f8ff", highlightthickness=0)
         self.canvas.pack()
@@ -118,18 +110,14 @@ def reset_high_score(self):
             color = self.colors[i]
             x, y = pos
 
-            # ★ 丸ボタン（影付き）
             oval = self.canvas.create_oval(
                 x - size/2, y - size/2,
                 x + size/2, y + size/2,
                 fill=color, outline="", width=0
             )
 
-            # ボタンとして扱うためにタグ付け
             tag = f"btn{i}"
             self.canvas.itemconfig(oval, tags=tag)
-
-            # クリックイベント
             self.canvas.tag_bind(tag, "<Button-1>",
                                  lambda e, c=color: self.user_press(c))
 
@@ -154,32 +142,27 @@ def reset_high_score(self):
         threading.Thread(target=self.play_sequence).start()
 
     # ============================================================
-    # シーケンス再生（アニメーション強化）
+    # シーケンス再生
     # ============================================================
     def play_sequence(self):
         self.is_playing_sequence = True
         time.sleep(0.8)
 
-        for i, color in enumerate(self.sequence):
+        for color in self.sequence:
             self.animate_flash(color)
             time.sleep(0.35)
 
         self.is_playing_sequence = False
 
-    # ============================================================
-    # 丸ボタンの光アニメーション
-    # ============================================================
     def animate_flash(self, color):
         oval = self.buttons[color]
         index = self.colors.index(color)
         light = self.light_colors[index]
 
-        # 光る
         self.canvas.itemconfig(oval, fill=light)
         self.root.update()
         time.sleep(0.25)
 
-        # 元に戻る
         self.canvas.itemconfig(oval, fill=color)
         self.root.update()
 
@@ -192,13 +175,12 @@ def reset_high_score(self):
         self.progress_label.config(text=done + remain)
 
     # ============================================================
-    # ユーザー入力（押したときの凹みアニメーション付き）
+    # ユーザー入力
     # ============================================================
     def user_press(self, color):
         if self.is_playing_sequence:
             return
 
-        # 押したときの凹みアニメーション
         self.animate_press(color)
 
         # 正解
@@ -211,7 +193,6 @@ def reset_high_score(self):
                 self.feedback_label.config(text="✔ 正解！", fg="green")
                 self.root.after(600, lambda: self.feedback_label.config(text=""))
 
-            if self.user_index == len(self.sequence):
                 self.round += 1
                 if self.round - 1 > self.settings["high_score"]:
                     self.settings["high_score"] = self.round - 1
@@ -240,12 +221,10 @@ def reset_high_score(self):
         index = self.colors.index(color)
         light = self.light_colors[index]
 
-        # 少し暗くする
         self.canvas.itemconfig(oval, fill=light)
         self.root.update()
         time.sleep(0.1)
 
-        # 元に戻す
         self.canvas.itemconfig(oval, fill=color)
         self.root.update()
 
@@ -255,8 +234,8 @@ def reset_high_score(self):
     def game_over(self):
         self.clear_screen()
 
-        tk.Label(self.root, text="ゲームオーバー", font=("Arial Rounded MT Bold", 28),
-                 bg="#f0f8ff").pack(pady=40)
+        tk.Label(self.root, text="ゲームオーバー",
+                 font=("Arial Rounded MT Bold", 28), bg="#f0f8ff").pack(pady=40)
 
         tk.Label(self.root, text=f"到達ラウンド：{self.round - 1}",
                  font=("Arial", 22), bg="#f0f8ff").pack(pady=10)
