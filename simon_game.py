@@ -47,6 +47,10 @@ class SimonGame:
         with open(SETTINGS_FILE, "w") as f:
             json.dump(self.settings, f, indent=4)
 
+    def clear_screen(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
     # ============================================================
     # タイトル画面
     # ============================================================
@@ -71,11 +75,6 @@ def reset_high_score(self):
     self.settings["high_score"] = 0
     self.save_settings()
     self.create_title_screen()  # 画面を更新
-
-def clear_screen(self):
-    for widget in self.root.winfo_children():
-        widget.destroy()
-
 
     # ============================================================
     # ゲーム開始
