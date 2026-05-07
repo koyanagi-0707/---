@@ -72,6 +72,10 @@ def reset_high_score(self):
     self.save_settings()
     self.create_title_screen()  # 画面を更新
 
+def clear_screen(self):
+    for widget in self.root.winfo_children():
+        widget.destroy()
+
 
     # ============================================================
     # ゲーム開始
