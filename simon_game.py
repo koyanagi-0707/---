@@ -12,7 +12,7 @@ class SimonGame:
     def __init__(self, root):
         self.root = root
         self.root.title("Color Memory Trainer")
-        self.root.geometry("500x720")
+        self.root.geometry("500x750")
         self.root.configure(bg="#f0f8ff")
 
         # 設定読み込み
@@ -25,6 +25,9 @@ class SimonGame:
         self.miss_count = 0
         self.is_playing_sequence = False
 
+        # 難易度（デフォルト：かんたん）
+        self.difficulty = "easy"
+
         # 色設定（柔らかい色）
         self.colors = ["#ff6b6b", "#4d96ff", "#6bcf63", "#ffd93d"]
         self.light_colors = ["#ff9e9e", "#8ab8ff", "#a8f0a8", "#ffec8a"]
@@ -36,10 +39,7 @@ class SimonGame:
     # ============================================================
     def load_settings(self):
         if not os.path.exists(SETTINGS_FILE):
-            return {
-                "high_score": 0,
-                "button_size": "large"
-            }
+            return {"high_score": 0}
         with open(SETTINGS_FILE, "r") as f:
             return json.load(f)
 
@@ -54,17 +54,53 @@ class SimonGame:
         self.clear_screen()
 
         tk.Label(self.root, text="Color Memory Trainer",
-                 font=("Arial Rounded MT Bold", 28), bg="#f0f8ff").pack(pady=40)
+                 font=("Arial Rounded MT Bold", 28), bg="#f0f8ff").pack(pady=30)
 
         tk.Button(self.root, text="スタート", font=("Arial", 20),
-                  command=self.start_game).pack(pady=20)
+                  command=self.start_game).pack(pady=15)
 
-        # ★ ハイスコアリセットボタン
+        # ★ 設定画面へ
+        tk.Button(self.root, text="設定", font=("Arial", 18),
+                  command=self.create_settings_screen).pack(pady=10)
+
+        # ★ ハイスコアリセット
         tk.Button(self.root, text="ハイスコアをリセット", font=("Arial", 16),
                   command=self.reset_high_score).pack(pady=10)
 
         tk.Label(self.root, text=f"最高記録：{self.settings['high_score']}",
-                 font=("Arial", 18), bg="#f0f8ff").pack(pady=20)
+                 font=("Arial", 18), bg="#f0f8ff").pack(pady=10)
+
+    # ============================================================
+    # 設定画面（難易度選択）
+    # ============================================================
+    def create_settings_screen(self):
+        self.clear_screen()
+
+        tk.Label(self.root, text="設定", font=("Arial Rounded MT Bold", 26),
+                 bg="#f0f8ff").pack(pady=20)
+
+        tk.Label(self.root, text="難易度", font=("Arial", 20),
+                 bg="#f0f8ff").pack(pady=10)
+
+        # ★ 現在の難易度をマークで表示
+        def mark(level):
+            return "●" if self.difficulty == level else "○"
+
+        tk.Button(self.root, text=f"{mark('easy')} かんたん", font=("Arial", 18),
+                  command=lambda: self.set_difficulty_and_refresh("easy")).pack(pady=5)
+
+        tk.Button(self.root, text=f"{mark('normal')} ふつう", font=("Arial", 18),
+                  command=lambda: self.set_difficulty_and_refresh("normal")).pack(pady=5)
+
+        tk.Button(self.root, text=f"{mark('hard')} むずかしい", font=("Arial", 18),
+                  command=lambda: self.set_difficulty_and_refresh("hard")).pack(pady=5)
+
+        tk.Button(self.root, text="戻る", font=("Arial", 18),
+                  command=self.create_title_screen).pack(pady=30)
+
+    def set_difficulty_and_refresh(self, level):
+        self.difficulty = level
+        self.create_settings_screen()
 
     def reset_high_score(self):
         self.settings["high_score"] = 0
@@ -77,6 +113,7 @@ class SimonGame:
     def start_game(self):
         self.round = 1
         self.miss_count = 0
+        self.sequence = []  # ★ 初期化
         self.create_game_screen()
         self.next_round()
 
@@ -127,14 +164,26 @@ class SimonGame:
                   command=self.create_title_screen).pack(pady=20)
 
     # ============================================================
-    # ラウンド進行（毎回ランダム生成）
+    # ラウンド進行（難易度ごとにステップ増加）
     # ============================================================
     def next_round(self):
         self.user_index = 0
         self.miss_count = 0
 
-        length = self.round
-        self.sequence = [random.choice(self.colors) for _ in range(length)]
+        # ★ 難易度ごとの増加ステップ数
+        if self.difficulty == "easy":
+            increase = 1
+        elif self.difficulty == "normal":
+            increase = 2
+        else:  # hard
+            increase = random.randint(1, 3)
+
+        # ★ sequence を増やす
+        if self.round == 1:
+            self.sequence = [random.choice(self.colors)]
+        else:
+            for _ in range(increase):
+                self.sequence.append(random.choice(self.colors))
 
         self.update_progress()
         self.round_label.config(text=f"ラウンド：{self.round}")
@@ -142,15 +191,22 @@ class SimonGame:
         threading.Thread(target=self.play_sequence).start()
 
     # ============================================================
-    # シーケンス再生
+    # シーケンス再生（難易度でスピード変更）
     # ============================================================
     def play_sequence(self):
         self.is_playing_sequence = True
         time.sleep(0.8)
 
+        if self.difficulty == "easy":
+            flash_speed = 0.45
+        elif self.difficulty == "hard":
+            flash_speed = 0.20
+        else:
+            flash_speed = 0.30
+
         for color in self.sequence:
             self.animate_flash(color)
-            time.sleep(0.35)
+            time.sleep(flash_speed)
 
         self.is_playing_sequence = False
 
@@ -183,12 +239,10 @@ class SimonGame:
 
         self.animate_press(color)
 
-        # 正解
         if color == self.sequence[self.user_index]:
             self.user_index += 1
             self.update_progress()
 
-            # ★ ラウンドクリア時のみ正解表示
             if self.user_index == len(self.sequence):
                 self.feedback_label.config(text="✔ 正解！", fg="green")
                 self.root.after(600, lambda: self.feedback_label.config(text=""))
