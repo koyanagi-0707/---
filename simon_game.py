@@ -192,7 +192,8 @@ class SimonGame:
             self.user_index += 1
             self.update_progress()
 
-            if self.user_index == 1:
+            # ★ ラウンドクリア時のみ正解表示
+            if self.user_index == len(self.sequence):
                 self.feedback_label.config(text="✔ 正解！", fg="green")
                 self.root.after(600, lambda: self.feedback_label.config(text=""))
 
