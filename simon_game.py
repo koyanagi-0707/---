@@ -61,7 +61,7 @@ class SimonGame:
 
     # ★ ハイスコアリセットボタンを追加
         tk.Button(self.root, text="ハイスコアをリセット", font=("Arial", 16),
-              command=self.reset_high_score).pack(pady=10)
+                  command=self.reset_high_score).pack(pady=10)
 
         tk.Label(self.root, text=f"最高記録：{self.settings['high_score']}",
                  font=("Arial", 18), bg="#f0f8ff").pack(pady=20)
